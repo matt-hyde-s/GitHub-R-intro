@@ -1,0 +1,223 @@
+---
+title: "Intro to R and R Markdown"
+author: "Matthew Hyde"
+date: "2023-01-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("setup.R")
+library(tidyverse)
+```
+
+The penguins data and data types
+
+```{r}
+##penguin data
+data("penguins")
+print(penguins)
+
+class(penguins)
+str(penguins)
+
+class(penguins$species)
+str(penguins$species)
+
+myList<-list("apple",1993,FALSE, penguins)
+str(myList)
+
+##nesting lists
+list(myList,list("more stuff here",list("and more")))
+
+##rettrieve or assign names to list and vector elements
+
+names(myList) <- c("fruit", "year", "logic", "data")
+names(myList)
+
+```
+
+Indexing
+
+```{r}
+
+myList[[1]]
+myList[["data"]]
+
+#index vectors
+myVector<- c("apple", "banana","pear")
+myVector[2]
+
+##index data frames
+penguins[1:5,2]
+
+penguins[1:5,"island"]
+
+penguins[1,1:5]
+penguins[1:5,c("species","sex")]
+
+penguins[penguins$sex=='female',]
+penguins$species
+
+
+
+
+```
+
+6.3.1 Exercises
+The first two codes have spelling or case sensitive errors. The third one isn't indexing the right way.
+
+
+```{r}
+Adjusted coded
+myList["fruit"]
+
+penguins$flipper_length_mm
+penguins$island=='Dream'
+
+unique(penguins$species)
+
+#3 unique species
+
+unique(penguins$island)
+
+#3 unique islands
+
+newPenguins<-penguins[penguins$island=='Dream',c("species","island","flipper_length_mm")]
+
+?mean
+
+index<-penguins[penguins$island=='Dream' & penguins$species=='Adelie',]
+mean(index$flipper_length_mm)
+
+```
+
+6.4 The dplyr package
+
+```{r}
+
+filter(penguins,species == "Adelie")
+
+filter(penguins,species !="Adelie")
+
+filter(penguins,island %in% c("Dream","Torgersen") & !is.na(bill_length_mm))
+
+
+##using select
+
+select(penguins,species,sex)
+
+select(penguins,species:flipper_length_mm)
+
+select(penguins,contains("mm"))
+
+
+##creating new variables with mutate
+
+mutate(penguins, bill_length_cm = bill_length_mm/10)
+
+mutate(penguins,species_sex = if_else(sex == 'male',paste0(species,"_m"),paste0(species,"_f")))
+
+##using group_by and summarise()
+
+df1 <- filter(penguins,island == "Dream")
+df2 <- mutate(df1, flipper_length_cm = flipper_length_mm/10)
+df3 <- select(df2,species,year,flipper_length_cm)
+print(df3)
+
+penguins %>%
+  filter(island == "Dream") %>%
+  mutate(flipper_length_cm = flipper_length_mm/10) %>%
+  select(species,year,flipper_length_cm)
+
+penguins %>%
+  group_by(species,year) %>%
+  summarise(n_observations = n())
+
+
+```
+
+6.3.2 Exercise
+
+```{r}
+
+##reorder penguins so that year is the first column
+
+?everything
+last_col(penguins$year,vars = NULL)
+
+
+mean(penguins$body_mass_g, trim = 0, na.rm = TRUE)
+
+##average is 4201.754 grams
+
+penguins %>%
+  select(body_mass_g > 4201.754) %>%
+  
+
+
+
+##which year had the largest body size sample
+penguins %>% 
+  group_by(year) %>% 
+  summarise(body_mass_avg = mean(body_mass_g, na.rm = TRUE))
+
+##2008 has the highest body mass average
+  
+
+
+#adjust to select years that aren't 2007
+penguins %>% 
+  filter(year != c(2008, 2009))
+```
+
+
+7. Visualize
+
+```{r}
+
+ggplot(penguins)+
+  geom_histogram(mapping=aes(x=flipper_length_mm))
+
+# Histogram example: flipper length by species
+ggplot(penguins) +
+  geom_histogram(aes(x = flipper_length_mm, fill = species), alpha = 0.5, position = "identity") +
+  scale_fill_manual(values = c("darkorange","darkorchid","cyan4"))
+
+ggplot(penguins) +
+  geom_histogram(aes(x = flipper_length_mm, fill = species), alpha = 0.5, position = "identity") +
+  scale_fill_manual(values = c("darkorange","darkorchid","cyan4")) +
+  facet_wrap(~species)
+
+
+##barplot
+ggplot(penguins) +
+  geom_bar(mapping = aes(x = island, fill = species))
+
+ggplot(penguins, aes(x = island, fill = species)) +
+  geom_bar(alpha = 0.8) +
+  scale_fill_manual(values = c("darkorange","purple","cyan4"), 
+                    guide = FALSE) +
+  theme_minimal() +
+  facet_wrap(~species, ncol = 1) +
+  coord_flip()
+
+
+ggplot(penguins) +
+  geom_point(mapping = aes(x = body_mass_g, y = flipper_length_mm, color = species))
+
+bar_flip<-penguins %>%
+  group_by(species) %>% 
+  summarise(flip_avg = mean(flipper_length_mm, na.rm = TRUE))
+
+ggplot(bar_flip) +
+  geom_bar(mapping = aes(x= flip_avg,fill=species))
+
+dreambill<-penguins %>%
+  filter(island == "Dream")
+
+
+ggplot(dreambill) + 
+  geom_point(mapping = aes(x=bill_length_mm, y=bill_depth_mm,color=species))
+
+```
